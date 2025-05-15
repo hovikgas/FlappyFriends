@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>Flappy Bird Royale</title>
+    <style>
+        :root {
+            --safe-area-inset-top: env(safe-area-inset-top, 0px);
+            --safe-area-inset-right: env(safe-area-inset-right, 0px);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-area-inset-left: env(safe-area-inset-left, 0px);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #333;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            height: calc(100vh - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+            padding-top: var(--safe-area-inset-top);
+            padding-bottom: var(--safe-area-inset-bottom);
+            padding-left: var(--safe-area-inset-left);
+            padding-right: var(--safe-area-inset-right);
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 480px; /* Max width for larger screens, maintains aspect ratio */
+            max-height: 800px; /* Max height for larger screens */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #70c5ce; /* Sky color */
+        }
+
+        canvas#gameCanvas {
+            display: block;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            background-color: transparent; /* Canvas is transparent, background is on container */
+            /* Dimensions will be set by JS based on container */
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #lobbyScreen .player-list,
+        #leaderboardScreen .leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            padding: 10px;
+            width: 80%;
+            max-width: 300px;
+        }
+        #lobbyScreen .player-list li,
+        #leaderboardScreen .leaderboard-list li {
+            padding: 5px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        #lobbyScreen .player-list li:last-child,
+        #leaderboardScreen .leaderboard-list li:last-child {
+            border-bottom: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #winnerBanner {
+            font-size: 3em;
+            color: yellow;
+            text-shadow: 2px 2px 4px #000;
+            padding: 20px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 10px;
+        }
+
+        #scoreDisplay, #highScoreDisplay {
+            position: absolute;
+            top: calc(10px + var(--safe-area-inset-top));
+            left: calc(10px + var(--safe-area-inset-left));
+            font-size: 1.5em;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+            z-index: 5;
+        }
+        #highScoreDisplay {
+            left: auto;
+            right: calc(10px + var(--safe-area-inset-right));
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            /* Disable animations or use simpler ones if any CSS animations were used */
+            /* For canvas animations, this will be handled in JS */
+            body {
+                /* Example: remove background animations if any */
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- UI Overlays -->
+        <div id="mainMenuScreen" class="ui-overlay">
+            <h1>Flappy Bird Royale</h1>
+            <input type="text" id="nicknameInput" placeholder="Enter Nickname (max 10 chars)" maxlength="10">
+            <button id="playSinglePlayerButton">Single Player</button>
+            <button id="multiplayerButton">Multiplayer</button>
+            <p id="loadingStatus">Loading assets...</p>
+        </div>
+
+        <div id="lobbyScreen" class="ui-overlay hidden">
+            <h2>Lobby</h2>
+            <ul id="playerList" class="player-list">
+                <!-- Player items will be added here by JS -->
+            </ul>
+            <button id="readyButton">Ready</button>
+            <p id="lobbyStatus">Waiting for players...</p>
+        </div>
+
+        <div id="countdownScreen" class="ui-overlay hidden">
+            <h1 id="countdownText">3</h1>
+        </div>
+
+        <div id="gameOverScreen" class="ui-overlay hidden">
+            <h2>Game Over!</h2>
+            <p>Score: <span id="finalScore">0</span></p>
+            <p>High Score: <span id="finalHighScore">0</span></p>
+            <button id="restartSinglePlayerButton">Play Again</button>
+            <button id="backToMenuButton">Back to Menu</button>
+        </div>
+
+        <div id="winnerBannerContainer" class="ui-overlay hidden">
+            <h1 id="winnerBanner">WINNER!</h1>
+        </div>
+
+        <!-- In-game UI elements -->
+        <div id="scoreDisplay" class="hidden">Score: 0</div>
+        <div id="highScoreDisplay" class="hidden">High Score: 0</div>
+        <div id="leaderboardScreen" class="ui-overlay hidden" style="justify-content: flex-start; padding-top: 20px;">
+            <h3>Leaderboard</h3>
+            <ul id="leaderboardList" class="leaderboard-list">
+                <!-- Leaderboard items will be added here by JS -->
+            </ul>
+        </div>
+
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
