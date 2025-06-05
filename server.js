@@ -19,7 +19,13 @@ const CANVAS_HEIGHT = 512; // Assuming a fixed conceptual game height for server
 const PIPE_SPEED = 2; // Match client if pipes are client-side, or server dictates pipe movement
 const PIPE_WIDTH = 80;
 const PIPE_GAP = 150;
-const PIPE_SPAWN_INTERVAL_SERVER_TICKS = (120 / (1000 / SERVER_TICK_RATE)); // Approx 120 client frames at 60fps = 4 server ticks at 20Hz if 120 client frames = 2s
+// Number of server ticks between pipe spawns. The client spawns a pipe every
+// 120 frames (roughly every 2 seconds at 60 FPS). We convert that interval to
+// the server tick rate so pipes appear at the same cadence.
+const PIPE_SPAWN_INTERVAL_CLIENT_FRAMES = 120;
+const PIPE_SPAWN_INTERVAL_SERVER_TICKS = Math.round(
+    (PIPE_SPAWN_INTERVAL_CLIENT_FRAMES / 60) * SERVER_TICK_RATE
+); // 120 frames / 60fps * 20Hz = 40 server ticks
 
 // --- Game State (Server-side) ---
 let players = {}; // { id: { ws, nickname, x, y, velocityY, angle, isReady, isDead, score, lastFlapTick } }
