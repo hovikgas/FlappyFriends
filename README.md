@@ -53,7 +53,7 @@ A simple Flappy Bird-style game with single-player and multiplayer battle-royale
     By default, the server will run on `http://localhost:3000` and the WebSocket server on `ws://localhost:3000`.
 
 4.  **Open the Game:**
-    Open the `index.html` file in your web browser (preferably a modern browser like Chrome, Firefox, or Mobile Safari on iOS 18).
+    Open the `index.html` file in your web browser like Chrome, Firefox, or Mobile Safari on iOS 18.
     -   You can usually do this by double-clicking the `index.html` file or by navigating to `file:///path/to/your/project/index.html`.
     -   For multiplayer, ensure clients can reach the server (e.g., all on the same local network, or server deployed publicly).
 
