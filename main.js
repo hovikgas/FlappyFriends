@@ -88,7 +88,12 @@ let clientTick = 0;
 
 // --- Asset Loading ---
 const assetSources = {
-    spriteSheet: "assets/sprite_atlas.png",
+    background: "assets/background-day.png",
+    ground: "assets/base.png",
+    pipe: "assets/pipe-green.png",
+    birdUp: "assets/yellowbird-upflap.png",
+    birdMid: "assets/yellowbird-midflap.png",
+    birdDown: "assets/yellowbird-downflap.png",
     flapSfx: "assets/flap.wav",
     scoreSfx: "assets/score.wav",
     hitSfx: "assets/hit.wav",
@@ -115,14 +120,38 @@ async function loadAssets() {
         }
     }
 
-    assets.spriteSheet = new Image();
-    assets.spriteSheet.src = assetSources.spriteSheet;
-    assets.spriteSheet.onload = updateLoadingProgress;
-    assets.spriteSheet.onerror = () => {
-        console.error("Failed to load sprite sheet");
-        updateLoadingProgress(); // Still count it
-    }
+    // Load images
+    assets.background = new Image();
+    assets.background.src = assetSources.background;
+    assets.background.onload = updateLoadingProgress;
+    assets.background.onerror = () => { console.error("Failed to load background"); updateLoadingProgress(); };
 
+    assets.ground = new Image();
+    assets.ground.src = assetSources.ground;
+    assets.ground.onload = updateLoadingProgress;
+    assets.ground.onerror = () => { console.error("Failed to load ground"); updateLoadingProgress(); };
+
+    assets.pipe = new Image();
+    assets.pipe.src = assetSources.pipe;
+    assets.pipe.onload = updateLoadingProgress;
+    assets.pipe.onerror = () => { console.error("Failed to load pipe"); updateLoadingProgress(); };
+
+    assets.birdUp = new Image();
+    assets.birdUp.src = assetSources.birdUp;
+    assets.birdUp.onload = updateLoadingProgress;
+    assets.birdUp.onerror = () => { console.error("Failed to load birdUp"); updateLoadingProgress(); };
+
+    assets.birdMid = new Image();
+    assets.birdMid.src = assetSources.birdMid;
+    assets.birdMid.onload = updateLoadingProgress;
+    assets.birdMid.onerror = () => { console.error("Failed to load birdMid"); updateLoadingProgress(); };
+
+    assets.birdDown = new Image();
+    assets.birdDown.src = assetSources.birdDown;
+    assets.birdDown.onload = updateLoadingProgress;
+    assets.birdDown.onerror = () => { console.error("Failed to load birdDown"); updateLoadingProgress(); };
+
+    // Load sounds
     for (const key in assetSources) {
         if (assetSources[key].endsWith(".wav") || assetSources[key].endsWith(".mp3")) {
             fetch(assetSources[key])
@@ -551,9 +580,13 @@ function drawBird(playerBird) {
     ctx.save();
     ctx.translate(playerBird.x + playerBird.width / 2, playerBird.y + playerBird.height / 2);
     ctx.rotate(playerBird.angle);
-    const frameX = (Math.floor(playerBird.frame / 5) % 3) * BIRD_WIDTH; 
-    if (assets.spriteSheet && assets.spriteSheet.complete && assets.spriteSheet.naturalWidth > 0) {
-        ctx.drawImage(assets.spriteSheet, frameX, 0, BIRD_WIDTH, BIRD_HEIGHT, -playerBird.width / 2, -playerBird.height / 2, playerBird.width, playerBird.height);
+    // Animate bird: 0 = upflap, 1 = midflap, 2 = downflap
+    let frame = Math.floor(playerBird.frame / 5) % 3;
+    let birdImg = assets.birdMid;
+    if (frame === 0) birdImg = assets.birdUp;
+    else if (frame === 2) birdImg = assets.birdDown;
+    if (birdImg && birdImg.complete && birdImg.naturalWidth > 0) {
+        ctx.drawImage(birdImg, -playerBird.width / 2, -playerBird.height / 2, playerBird.width, playerBird.height);
     }
     ctx.restore();
     playerBird.frame++;
@@ -561,23 +594,16 @@ function drawBird(playerBird) {
 
 function drawPipes() {
     pipes.forEach(pipe => {
-        if (assets.spriteSheet && assets.spriteSheet.complete && assets.spriteSheet.naturalWidth > 0) {
-            const pipeAtlasTopSpriteX = 0; 
-            const pipeAtlasSpriteY = 24; 
-            const pipeAtlasSpriteWidth = 52; 
-            const pipeAtlasSpriteHeight = 320; 
-            const pipeAtlasBottomSpriteX = pipeAtlasTopSpriteX + pipeAtlasSpriteWidth;
-
-            // Top pipe
-            ctx.drawImage(assets.spriteSheet, 
-                pipeAtlasTopSpriteX, pipeAtlasSpriteY, pipeAtlasSpriteWidth, pipeAtlasSpriteHeight, 
-                pipe.x, pipe.y - pipeAtlasSpriteHeight, PIPE_WIDTH, pipeAtlasSpriteHeight);
+        if (assets.pipe && assets.pipe.complete && assets.pipe.naturalWidth > 0) {
+            // Top pipe (flipped vertically)
+            ctx.save();
+            ctx.translate(pipe.x + PIPE_WIDTH / 2, pipe.y - PIPE_WIDTH / 2);
+            ctx.scale(1, -1);
+            ctx.drawImage(assets.pipe, -PIPE_WIDTH / 2, 0, PIPE_WIDTH, 320);
+            ctx.restore();
             // Bottom pipe
-            ctx.drawImage(assets.spriteSheet, 
-                pipeAtlasBottomSpriteX, pipeAtlasSpriteY, pipeAtlasSpriteWidth, pipeAtlasSpriteHeight, 
-                pipe.x, pipe.y + PIPE_GAP, PIPE_WIDTH, pipeAtlasSpriteHeight);
-
-        } else { 
+            ctx.drawImage(assets.pipe, pipe.x, pipe.y + PIPE_GAP, PIPE_WIDTH, 320);
+        } else {
             ctx.fillStyle = "green";
             ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.y);
             ctx.fillRect(pipe.x, pipe.y + PIPE_GAP, PIPE_WIDTH, LOGICAL_CANVAS_HEIGHT - (pipe.y + PIPE_GAP));
@@ -586,19 +612,17 @@ function drawPipes() {
 }
 
 function drawBackground() {
-    if (assets.spriteSheet && assets.spriteSheet.complete && assets.spriteSheet.naturalWidth > 0) {
-        const groundSpriteX = 0;
-        const groundSpriteY = 344; 
-        const groundSpriteWidth = 336; 
-        const groundSpriteHeight = 112; 
-
-        const groundVisualY = LOGICAL_CANVAS_HEIGHT - groundSpriteHeight;
-        if (groundVisualY < 0) return; // Don't draw ground if canvas too short
-
-        const groundOffset = (frameCount * PIPE_SPEED) % groundSpriteWidth;
-        for (let i = 0; (i * groundSpriteWidth - groundOffset) < LOGICAL_CANVAS_WIDTH; i++) {
-            ctx.drawImage(assets.spriteSheet, groundSpriteX, groundSpriteY, groundSpriteWidth, groundSpriteHeight,
-                          i * groundSpriteWidth - groundOffset, groundVisualY, groundSpriteWidth, groundSpriteHeight);
+    if (assets.background && assets.background.complete && assets.background.naturalWidth > 0) {
+        ctx.drawImage(assets.background, 0, 0, LOGICAL_CANVAS_WIDTH, LOGICAL_CANVAS_HEIGHT);
+    }
+    // Draw ground
+    if (assets.ground && assets.ground.complete && assets.ground.naturalWidth > 0) {
+        const groundHeight = assets.ground.height;
+        const groundWidth = assets.ground.width;
+        const groundVisualY = LOGICAL_CANVAS_HEIGHT - groundHeight;
+        const groundOffset = (frameCount * PIPE_SPEED) % groundWidth;
+        for (let i = 0; (i * groundWidth - groundOffset) < LOGICAL_CANVAS_WIDTH; i++) {
+            ctx.drawImage(assets.ground, i * groundWidth - groundOffset, groundVisualY, groundWidth, groundHeight);
         }
     }
 }
