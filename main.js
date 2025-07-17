@@ -562,6 +562,11 @@ function startCountdown(seconds) {
     let count = seconds;
     countdownText.textContent = count;
 
+    // Ensure the game loop is running for multiplayer countdown
+    if (gameMode === "multi") {
+        requestAnimationFrame(gameLoop);
+    }
+
     const interval = setInterval(() => {
         count--;
         if (count > 0) {
